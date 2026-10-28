@@ -11,6 +11,17 @@ export default function Layout() {
     navigate('/login')
   }
 
+  const handleInstall = async () => {
+    const prompt = (window as any).deferredPrompt
+    if (prompt) {
+      prompt.prompt()
+      const { outcome } = await prompt.userChoice
+      if (outcome === 'accepted') {
+        delete (window as any).deferredPrompt
+      }
+    }
+  }
+
   return (
     <div className="layout">
       <header className="header">
@@ -35,6 +46,9 @@ export default function Layout() {
             </nav>
           </div>
           <div className="header-right">
+            <button onClick={handleInstall} className="nav-link btn-install" style={{ background: 'none', border: 'none', fontFamily: 'inherit' }}>
+              📲 Instalar App
+            </button>
             <NavLink to="/settings" className="nav-link">
               Configurações
             </NavLink>
