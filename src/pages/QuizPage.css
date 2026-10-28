@@ -330,6 +330,26 @@
   border-radius: 8px;
 }
 
+.explanation-card {
+  background: #f1f8e9;
+  border: 2px solid #c5e1a5;
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  margin-top: 1rem;
+}
+
+.explanation-card h4 {
+  color: var(--success);
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+}
+
+.explanation-card p {
+  color: var(--text-primary);
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
 .quiz-header {
   background: var(--card-bg);
   padding: 1rem 1.25rem;

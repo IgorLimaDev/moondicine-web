@@ -22,10 +22,12 @@ export default function StatsPage() {
 
   const fetchStats = async () => {
     try {
-      const { data: answers } = await supabase
+      const { data: answers, error } = await supabase
         .from('user_answers')
         .select('is_correct, question_id')
         .eq('user_id', user?.id)
+
+      if (error) throw error
 
       const answersData = answers || []
       const total = answersData.length
@@ -45,7 +47,7 @@ export default function StatsPage() {
 
         const specialtyMap = new Map<string, { total: number, correct: number }>()
         answersData.forEach(answer => {
-          const q = questions?.find(qu => qu.id === answer.question_id)
+          const q = questions?.find((qu: any) => qu.id === answer.question_id)
           if (q) {
             const current = specialtyMap.get(q.specialty) || { total: 0, correct: 0 }
             specialtyMap.set(q.specialty, {

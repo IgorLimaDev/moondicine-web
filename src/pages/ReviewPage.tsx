@@ -45,6 +45,7 @@ export default function ReviewPage() {
         .from('user_answers')
         .select(`
           id,
+          user_id,
           question_id,
           is_correct,
           answered_at,
@@ -57,7 +58,6 @@ export default function ReviewPage() {
         `)
         .eq('user_id', user?.id)
         .order('answered_at', { ascending: false })
-        .limit(100)
 
       if (error) throw error
       setReviews(data as any || [])

@@ -126,26 +126,67 @@ export default function QuizPage() {
       if (examFilter) query = query.eq('exam_source', examFilter)
       if (specialtyFilter) query = query.eq('specialty', specialtyFilter)
       
-      const { data: questionsData, error: qError } = await query.limit(mode === 'infinito' ? 200 : 50)
+      const { data: questionsData, error: qError } = await query
 
       if (qError) throw qError
 
-      const limit = mode === 'infinito' ? 1000 : 10
-      const shuffled = (questionsData || []).sort(() => Math.random() - 0.5).slice(0, limit)
-
-      const questionsWithOptions = await Promise.all(
-        shuffled.map(async (q) => {
-          const { data: optionsData } = await supabase
-            .from('answer_options')
-            .select('*')
-            .eq('question_id', q.id)
-            .order('option_letter')
-          
-          return { ...q, answer_options: optionsData || [] }
-        })
-      )
-
-      setQuestions(questionsWithOptions)
+      if (mode === 'infinito') {
+        // Infinite mode - take all questions, shuffle
+        const shuffled = (questionsData || []).sort(() => Math.random() - 0.5)
+        const questionsWithOptions = await Promise.all(
+          shuffled.slice(0, 50).map(async (q) => {
+            const { data: optionsData } = await supabase
+              .from('answer_options')
+              .select('*')
+              .eq('question_id', q.id)
+              .order('option_letter')
+            return { ...q, answer_options: optionsData || [] }
+          })
+        )
+        setQuestions(questionsWithOptions)
+      } else if (examFilter) {
+        // All questions from specific exam
+        const shuffled = (questionsData || []).sort((a: any, b: any) => a.question_number - b.question_number)
+        const questionsWithOptions = await Promise.all(
+          shuffled.map(async (q) => {
+            const { data: optionsData } = await supabase
+              .from('answer_options')
+              .select('*')
+              .eq('question_id', q.id)
+              .order('option_letter')
+            return { ...q, answer_options: optionsData || [] }
+          })
+        )
+        setQuestions(questionsWithOptions)
+      } else if (specialtyFilter) {
+        // All questions from specific specialty
+        const shuffled = (questionsData || []).sort(() => Math.random() - 0.5)
+        const questionsWithOptions = await Promise.all(
+          shuffled.map(async (q) => {
+            const { data: optionsData } = await supabase
+              .from('answer_options')
+              .select('*')
+              .eq('question_id', q.id)
+              .order('option_letter')
+            return { ...q, answer_options: optionsData || [] }
+          })
+        )
+        setQuestions(questionsWithOptions)
+      } else {
+        // Default - random 10 questions
+        const shuffled = (questionsData || []).sort(() => Math.random() - 0.5).slice(0, 10)
+        const questionsWithOptions = await Promise.all(
+          shuffled.map(async (q) => {
+            const { data: optionsData } = await supabase
+              .from('answer_options')
+              .select('*')
+              .eq('question_id', q.id)
+              .order('option_letter')
+            return { ...q, answer_options: optionsData || [] }
+          })
+        )
+        setQuestions(questionsWithOptions)
+      }
     } catch (error) {
       console.error('Error fetching questions:', error)
       alert('Erro ao carregar questões')
@@ -174,9 +215,11 @@ export default function QuizPage() {
     if (user) {
       try {
         await supabase.from('user_answers').insert({
+          user_id: user.id,
           question_id: currentQuestion.id,
           selected_option_id: selectedOption,
           is_correct: selectedOpt?.is_correct || false,
+          answered_at: new Date().toISOString(),
           time_spent_seconds: Math.floor((Date.now() - startTime) / 1000)
         })
       } catch (error) {
@@ -187,13 +230,11 @@ export default function QuizPage() {
 
   const handleNext = () => {
     if (isInfinito && answered) {
-      // In infinite mode, load more or just continue
       if (currentIndex < questions.length - 1) {
         setCurrentIndex(prev => prev + 1)
         setSelectedOption(null)
         setAnswered(false)
       } else {
-        // Fetch more questions
         fetchMoreQuestions()
       }
     } else if (currentIndex < questions.length - 1) {
@@ -209,16 +250,33 @@ export default function QuizPage() {
     try {
       const examFilter = searchParams.get('exam')
       const specialtyFilter = searchParams.get('specialty')
+      const mode = searchParams.get('mode')
+      
+      if (mode !== 'infinito') {
+        finishQuiz()
+        return
+      }
       
       let query = supabase.from('questions').select('*')
       if (examFilter) query = query.eq('exam_source', examFilter)
       if (specialtyFilter) query = query.eq('specialty', specialtyFilter)
       
-      const { data: questionsData } = await query.limit(100)
-      const shuffled = (questionsData || []).sort(() => Math.random() - 0.5).slice(0, 10)
+      const { data: questionsData } = await query
+      
+      // Get questions not already shown
+      const shownIds = questions.map(q => q.id)
+      const remaining = (questionsData || []).filter((q: any) => !shownIds.includes(q.id))
+      let toAdd = []
+      
+      if (remaining.length > 0) {
+        toAdd = remaining.sort(() => Math.random() - 0.5).slice(0, 15)
+      } else {
+        // All questions shown, reshuffle from all
+        toAdd = (questionsData || []).sort(() => Math.random() - 0.5).slice(0, 15)
+      }
       
       const questionsWithOptions = await Promise.all(
-        shuffled.map(async (q) => {
+        toAdd.map(async (q) => {
           const { data: optionsData } = await supabase
             .from('answer_options')
             .select('*')
@@ -305,7 +363,7 @@ export default function QuizPage() {
       <div className="quiz-header">
         <div className="quiz-progress-info">
           <span>{isInfinito ? `Questão ${currentIndex + 1} • Modo Infinito` : `Questão ${currentIndex + 1} de ${questions.length}`}</span>
-          <span className="quiz-meta">⏱ {formatTime(timer)} | ✓ {correctCount}</span>
+          <span className="quiz-meta">⏱ {formatTime(timer)} | ✓ {correctCount} / {currentIndex + 1}</span>
         </div>
         <div className="quiz-progress-info">
           <span className="quiz-meta">{currentQuestion.exam_source} #{currentQuestion.question_number} • {currentQuestion.specialty}</span>
@@ -356,6 +414,13 @@ export default function QuizPage() {
           })}
         </div>
 
+        {answered && (currentQuestion as any).explanation && (
+          <div className="explanation-card">
+            <h4>💡 Explicação</h4>
+            <p>{(currentQuestion as any).explanation}</p>
+          </div>
+        )}
+
         <div className="quiz-actions">
           {!answered ? (
             <button
@@ -373,7 +438,7 @@ export default function QuizPage() {
                 </button>
               )}
               <button onClick={handleNext} className="btn-next" style={{ flex: 1 }}>
-                {isInfinito ? 'Próxima Questão' : currentIndex < questions.length - 1 ? 'Próxima Questão' : 'Ver Resultado'}
+                {isInfinito ? 'Próxima Questão' : currentIndex < questions.length - 1 ? 'Próxima Questão' : 'Finalizar Simulado'}
               </button>
             </div>
           )}
