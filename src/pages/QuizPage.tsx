@@ -38,6 +38,7 @@ export default function QuizPage() {
   const [showNoteModal, setShowNoteModal] = useState(false)
   const [noteText, setNoteText] = useState('')
   const [explanation, setExplanation] = useState<string | null>(null)
+  const [answeredCount, setAnsweredCount] = useState(0)
 
   useEffect(() => {
     const mode = searchParams.get('mode')
@@ -226,6 +227,7 @@ export default function QuizPage() {
     if (selectedOpt?.is_correct) {
       setCorrectCount(prev => prev + 1)
     }
+    setAnsweredCount(prev => prev + 1)
 
     // Fetch explanation
     try {
@@ -348,7 +350,7 @@ export default function QuizPage() {
           await supabase.from('user_profiles').update({
             current_streak_days: newStreak,
             last_study_date: new Date().toISOString(),
-            total_questions_answered: (profile?.total_questions_answered || 0) + questions.length
+            total_questions_answered: (profile?.total_questions_answered || 0) + answeredCount
           }).eq('id', user.id)
         }
       } catch (e) {
@@ -358,7 +360,7 @@ export default function QuizPage() {
     
     navigate('/quiz/result', {
       state: {
-        total: questions.length,
+        total: isInfinito ? answeredCount : questions.length,
         correct: correctCount,
         timeSpent
       }
@@ -394,8 +396,8 @@ export default function QuizPage() {
     <div className="quiz-page">
       <div className="quiz-header">
         <div className="quiz-progress-info">
-          <span>{isInfinito ? `Questão ${currentIndex + 1} • Modo Infinito` : `Questão ${currentIndex + 1} de ${questions.length}`}</span>
-          <span className="quiz-meta">⏱ {formatTime(timer)} | ✓ {correctCount} / {currentIndex + 1}</span>
+          <span>{isInfinito ? `Questão ${answeredCount + 1} • Modo Infinito` : `Questão ${currentIndex + 1} de ${questions.length}`}</span>
+          <span className="quiz-meta">⏱ {formatTime(timer)} | ✓ {correctCount} / {answeredCount}</span>
         </div>
         <div className="quiz-progress-info">
           <span className="quiz-meta">{currentQuestion.exam_source} #{currentQuestion.question_number} • {currentQuestion.specialty}</span>
