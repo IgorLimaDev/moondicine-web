@@ -41,13 +41,15 @@ export default function QuizPage() {
       const { data: questionsData, error: qError } = await supabase
         .from('questions')
         .select('*')
-        .limit(10)
-        .order('random()')
+        .limit(50)
 
       if (qError) throw qError
 
+      // Shuffle questions
+      const shuffled = (questionsData || []).sort(() => Math.random() - 0.5).slice(0, 10)
+
       const questionsWithOptions = await Promise.all(
-        (questionsData || []).map(async (q) => {
+        shuffled.map(async (q) => {
           const { data: optionsData } = await supabase
             .from('answer_options')
             .select('*')
