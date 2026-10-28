@@ -63,6 +63,7 @@ export default function ReviewPage() {
 
       if (error) throw error
       setReviews(data as any || [])
+      fetchNotes()
     } catch (error) {
       console.error('Error fetching reviews:', error)
     } finally {
@@ -94,6 +95,26 @@ export default function ReviewPage() {
     }
   }
 
+  const fetchNotes = async () => {
+    if (!user) return
+    try {
+      const { data } = await supabase
+        .from('question_notes')
+        .select('question_id, note_text')
+        .eq('user_id', user.id)
+
+      if (data) {
+        const notesMap: Record<number, string> = {}
+        data.forEach((n: any) => {
+          notesMap[n.question_id] = n.note_text
+        })
+        setNotes(notesMap)
+      }
+    } catch (error) {
+      console.error('Error fetching notes:', error)
+    }
+  }
+
   const expandQuestion = async (questionId: number) => {
     if (expandedId === questionId) {
       setExpandedId(null)
@@ -119,17 +140,6 @@ export default function ReviewPage() {
       }
     }
 
-    if (!notes[questionId] && user) {
-      const { data: nt } = await supabase
-        .from('question_notes')
-        .select('note_text')
-        .eq('question_id', questionId)
-        .eq('user_id', user.id)
-        .maybeSingle()
-      if (nt?.note_text) {
-        setNotes(prev => ({ ...prev, [questionId]: nt.note_text }))
-      }
-    }
   }
 
   const removeFlag = async (flagId: number) => {
