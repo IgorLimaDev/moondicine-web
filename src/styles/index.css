@@ -79,6 +79,22 @@ a:hover {
   --error: #ef5350;
 }
 
+:root.dark-mode .question-text,
+:root.dark-mode .option-button,
+:root.dark-mode .option-text,
+:root.dark-mode .option-letter,
+:root.dark-mode .review-question-text,
+:root.dark-mode .option-item,
+:root.dark-mode .review-date,
+:root.dark-mode .quiz-progress-info,
+:root.dark-mode .btn-flag,
+:root.dark-mode .btn-note,
+:root.dark-mode .note-textarea,
+:root.dark-mode .action-card p,
+:root.dark-mode .stat-box-label {
+  color: var(--text-primary) !important;
+}
+
 @media (max-width: 768px) {
   html {
     font-size: 15px;
