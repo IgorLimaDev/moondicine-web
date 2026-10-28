@@ -92,7 +92,7 @@ a:hover {
 :root.dark-mode .note-textarea,
 :root.dark-mode .action-card p,
 :root.dark-mode .stat-box-label {
-  color: var(--text-primary) !important;
+  color: #000000 !important;
 }
 
 @media (max-width: 768px) {
