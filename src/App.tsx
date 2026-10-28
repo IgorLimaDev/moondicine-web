@@ -5,6 +5,10 @@ import HomePage from './pages/HomePage'
 import QuizPage from './pages/QuizPage'
 import QuizResultPage from './pages/QuizResultPage'
 import ReviewPage from './pages/ReviewPage'
+import StatsPage from './pages/StatsPage'
+import SettingsPage from './pages/SettingsPage'
+import ExamBrowserPage from './pages/ExamBrowserPage'
+import SpecialtyBrowserPage from './pages/SpecialtyBrowserPage'
 import Layout from './components/Layout'
 import AdminLayout from './admin/AdminLayout'
 import AdminDashboard from './admin/AdminDashboard'
@@ -41,6 +45,10 @@ function App() {
         <Route path="quiz" element={<QuizPage />} />
         <Route path="quiz/result" element={<QuizResultPage />} />
         <Route path="review" element={<ReviewPage />} />
+        <Route path="stats" element={<StatsPage />} />
+        <Route path="settings" element={<SettingsPage />} />
+        <Route path="exams" element={<ExamBrowserPage />} />
+        <Route path="specialties" element={<SpecialtyBrowserPage />} />
       </Route>
 
       <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>

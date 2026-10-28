@@ -16,15 +16,26 @@ interface ReviewItem {
   }
 }
 
+interface FlaggedQuestion {
+  id: number
+  question_id: number
+  flagged_at: string
+  questions: ReviewItem['questions'] & { id: number }
+}
+
 export default function ReviewPage() {
   const { user } = useAuth()
   const [reviews, setReviews] = useState<ReviewItem[]>([])
+  const [flagged, setFlagged] = useState<FlaggedQuestion[]>([])
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState<'all' | 'wrong'>('all')
+  const [activeTab, setActiveTab] = useState<'all' | 'wrong' | 'flagged'>('all')
+  const [expandedId, setExpandedId] = useState<number | null>(null)
+  const [options, setOptions] = useState<any[]>([])
 
   useEffect(() => {
     if (user) {
       fetchReviews()
+      fetchFlagged()
     }
   }, [user])
 
@@ -46,7 +57,7 @@ export default function ReviewPage() {
         `)
         .eq('user_id', user?.id)
         .order('answered_at', { ascending: false })
-        .limit(50)
+        .limit(100)
 
       if (error) throw error
       setReviews(data as any || [])
@@ -57,7 +68,51 @@ export default function ReviewPage() {
     }
   }
 
-  const filteredReviews = filter === 'wrong' 
+  const fetchFlagged = async () => {
+    try {
+      const { data } = await supabase
+        .from('question_flags')
+        .select(`
+          id,
+          question_id,
+          flagged_at,
+          questions (
+            id,
+            question_text,
+            exam_source,
+            question_number,
+            specialty
+          )
+        `)
+        .eq('user_id', user?.id)
+        .order('flagged_at', { ascending: false })
+      setFlagged(data as any || [])
+    } catch (error) {
+      console.error('Error fetching flagged:', error)
+    }
+  }
+
+  const expandQuestion = async (questionId: number) => {
+    if (expandedId === questionId) {
+      setExpandedId(null)
+      setOptions([])
+      return
+    }
+    setExpandedId(questionId)
+    const { data } = await supabase
+      .from('answer_options')
+      .select('*')
+      .eq('question_id', questionId)
+      .order('option_letter')
+    setOptions(data || [])
+  }
+
+  const removeFlag = async (flagId: number) => {
+    await supabase.from('question_flags').delete().eq('id', flagId)
+    fetchFlagged()
+  }
+
+  const filteredReviews = activeTab === 'wrong' 
     ? reviews.filter(r => !r.is_correct)
     : reviews
 
@@ -71,60 +126,94 @@ export default function ReviewPage() {
     })
   }
 
+  if (loading) return <div className="review-page"><div className="loading">Carregando...</div></div>
+
   return (
     <div className="review-page">
       <div className="review-header">
         <h2>Revisão de Questões</h2>
-        <p>Histórico das suas respostas</p>
+        <p>Revise suas respostas e questões marcadas</p>
       </div>
 
-      <div className="review-filters">
-        <button
-          onClick={() => setFilter('all')}
-          className={filter === 'all' ? 'filter-btn active' : 'filter-btn'}
-        >
+      <div className="review-tabs">
+        <button onClick={() => setActiveTab('all')} className={activeTab === 'all' ? 'tab-btn active' : 'tab-btn'}>
           Todas ({reviews.length})
         </button>
-        <button
-          onClick={() => setFilter('wrong')}
-          className={filter === 'wrong' ? 'filter-btn active' : 'filter-btn'}
-        >
+        <button onClick={() => setActiveTab('wrong')} className={activeTab === 'wrong' ? 'tab-btn active' : 'tab-btn'}>
           Erradas ({reviews.filter(r => !r.is_correct).length})
+        </button>
+        <button onClick={() => setActiveTab('flagged')} className={activeTab === 'flagged' ? 'tab-btn active' : 'tab-btn'}>
+          Marcadas ({flagged.length})
         </button>
       </div>
 
-      {loading ? (
-        <div className="loading">Carregando...</div>
-      ) : filteredReviews.length === 0 ? (
-        <div className="empty-state">
-          <p>
-            {filter === 'wrong' 
-              ? 'Parabéns! Você não errou nenhuma questão ainda.' 
-              : 'Você ainda não respondeu nenhuma questão.'}
-          </p>
-        </div>
-      ) : (
-        <div className="review-list">
-          {filteredReviews.map(review => (
-            <div key={review.id} className="review-card">
-              <div className="review-card-header">
-                <div className="review-meta">
-                  <span className="review-badge exam">
-                    {review.questions.exam_source} #{review.questions.question_number}
-                  </span>
-                  <span className="review-badge specialty">{review.questions.specialty}</span>
-                  <span className={`review-badge status ${review.is_correct ? 'correct' : 'wrong'}`}>
-                    {review.is_correct ? '✓ Acertou' : '✗ Errou'}
-                  </span>
+      {activeTab === 'flagged' ? (
+        flagged.length === 0 ? (
+          <div className="empty-state"><p>Nenhuma questão marcada</p></div>
+        ) : (
+          <div className="review-list">
+            {flagged.map(item => (
+              <div key={item.id} className="review-card">
+                <div className="review-card-header">
+                  <div className="review-meta">
+                    <span className="review-badge exam">{item.questions.exam_source} #{item.questions.question_number}</span>
+                    <span className="review-badge specialty">{item.questions.specialty}</span>
+                  </div>
+                  <button onClick={() => removeFlag(item.id)} className="btn-unflag">Remover marcação</button>
                 </div>
-                <span className="review-date">{formatDate(review.answered_at)}</span>
+                <div className="review-card-body" onClick={() => expandQuestion(item.question_id)}>
+                  <p className="review-question-text">{item.questions.question_text}</p>
+                  {expandedId === item.question_id && (
+                    <div className="expanded-options">
+                      {options.map(opt => (
+                        <div key={opt.id} className={`option-item ${opt.is_correct ? 'correct' : ''}`}>
+                          <strong>{opt.option_letter})</strong> {opt.option_text}
+                          {opt.is_correct && <span> ✓</span>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="review-card-body">
-                <p className="review-question-text">{review.questions.question_text}</p>
+            ))}
+          </div>
+        )
+      ) : (
+        filteredReviews.length === 0 ? (
+          <div className="empty-state">
+            <p>{activeTab === 'wrong' ? 'Parabéns! Nenhuma questão errada.' : 'Você ainda não respondeu nenhuma questão.'}</p>
+          </div>
+        ) : (
+          <div className="review-list">
+            {filteredReviews.map(review => (
+              <div key={review.id} className="review-card">
+                <div className="review-card-header">
+                  <div className="review-meta">
+                    <span className="review-badge exam">{review.questions.exam_source} #{review.questions.question_number}</span>
+                    <span className="review-badge specialty">{review.questions.specialty}</span>
+                    <span className={`review-badge status ${review.is_correct ? 'correct' : 'wrong'}`}>
+                      {review.is_correct ? '✓ Acertou' : '✗ Errou'}
+                    </span>
+                  </div>
+                  <span className="review-date">{formatDate(review.answered_at)}</span>
+                </div>
+                <div className="review-card-body" onClick={() => expandQuestion(review.question_id)}>
+                  <p className="review-question-text">{review.questions.question_text}</p>
+                  {expandedId === review.question_id && (
+                    <div className="expanded-options">
+                      {options.map(opt => (
+                        <div key={opt.id} className={`option-item ${opt.is_correct ? 'correct' : ''}`}>
+                          <strong>{opt.option_letter})</strong> {opt.option_text}
+                          {opt.is_correct && <span> ✓</span>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )
       )}
     </div>
   )

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/auth'
 import './QuizPage.css'
@@ -23,6 +23,7 @@ interface AnswerOption {
 
 export default function QuizPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { user } = useAuth()
   const [questions, setQuestions] = useState<Question[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -31,22 +32,106 @@ export default function QuizPage() {
   const [correctCount, setCorrectCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [startTime] = useState(Date.now())
+  const [isInfinito, setIsInfinito] = useState(false)
+  const [timer, setTimer] = useState(0)
+  const [isFlagged, setIsFlagged] = useState(false)
+  const [showNoteModal, setShowNoteModal] = useState(false)
+  const [noteText, setNoteText] = useState('')
 
   useEffect(() => {
+    const mode = searchParams.get('mode')
+    setIsInfinito(mode === 'infinito')
     fetchQuestions()
   }, [])
 
+  useEffect(() => {
+    if (questions[currentIndex] && user) {
+      checkIfFlagged(questions[currentIndex].id)
+      fetchNote(questions[currentIndex].id)
+    }
+  }, [currentIndex, questions])
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTimer(Math.floor((Date.now() - startTime) / 1000))
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [])
+
+  const checkIfFlagged = async (questionId: number) => {
+    if (!user) return
+    const { data } = await supabase
+      .from('question_flags')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('question_id', questionId)
+      .single()
+    setIsFlagged(!!data)
+  }
+
+  const fetchNote = async (questionId: number) => {
+    if (!user) return
+    const { data } = await supabase
+      .from('question_notes')
+      .select('note_text')
+      .eq('user_id', user.id)
+      .eq('question_id', questionId)
+      .single()
+    setNoteText(data?.note_text || '')
+  }
+
+  const toggleFlag = async () => {
+    if (!user || !questions[currentIndex]) return
+    const questionId = questions[currentIndex].id
+    if (isFlagged) {
+      await supabase
+        .from('question_flags')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('question_id', questionId)
+      setIsFlagged(false)
+    } else {
+      await supabase
+        .from('question_flags')
+        .insert({ user_id: user.id, question_id: questionId })
+      setIsFlagged(true)
+    }
+  }
+
+  const saveNote = async () => {
+    if (!user || !questions[currentIndex]) return
+    const questionId = questions[currentIndex].id
+    if (noteText.trim() === '') {
+      await supabase
+        .from('question_notes')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('question_id', questionId)
+    } else {
+      await supabase
+        .from('question_notes')
+        .upsert({ user_id: user.id, question_id: questionId, note_text: noteText }, { onConflict: 'user_id,question_id' })
+    }
+    setShowNoteModal(false)
+  }
+
   const fetchQuestions = async () => {
     try {
-      const { data: questionsData, error: qError } = await supabase
-        .from('questions')
-        .select('*')
-        .limit(50)
+      const examFilter = searchParams.get('exam')
+      const specialtyFilter = searchParams.get('specialty')
+      const mode = searchParams.get('mode')
+      
+      let query = supabase.from('questions').select('*')
+      
+      if (examFilter) query = query.eq('exam_source', examFilter)
+      if (specialtyFilter) query = query.eq('specialty', specialtyFilter)
+      
+      const { data: questionsData, error: qError } = await query.limit(mode === 'infinito' ? 200 : 50)
 
       if (qError) throw qError
 
-      // Shuffle questions
-      const shuffled = (questionsData || []).sort(() => Math.random() - 0.5).slice(0, 10)
+      const limit = mode === 'infinito' ? 1000 : 10
+      const shuffled = (questionsData || []).sort(() => Math.random() - 0.5).slice(0, limit)
 
       const questionsWithOptions = await Promise.all(
         shuffled.map(async (q) => {
@@ -101,7 +186,17 @@ export default function QuizPage() {
   }
 
   const handleNext = () => {
-    if (currentIndex < questions.length - 1) {
+    if (isInfinito && answered) {
+      // In infinite mode, load more or just continue
+      if (currentIndex < questions.length - 1) {
+        setCurrentIndex(prev => prev + 1)
+        setSelectedOption(null)
+        setAnswered(false)
+      } else {
+        // Fetch more questions
+        fetchMoreQuestions()
+      }
+    } else if (currentIndex < questions.length - 1) {
       setCurrentIndex(prev => prev + 1)
       setSelectedOption(null)
       setAnswered(false)
@@ -110,8 +205,67 @@ export default function QuizPage() {
     }
   }
 
-  const finishQuiz = () => {
+  const fetchMoreQuestions = async () => {
+    try {
+      const examFilter = searchParams.get('exam')
+      const specialtyFilter = searchParams.get('specialty')
+      
+      let query = supabase.from('questions').select('*')
+      if (examFilter) query = query.eq('exam_source', examFilter)
+      if (specialtyFilter) query = query.eq('specialty', specialtyFilter)
+      
+      const { data: questionsData } = await query.limit(100)
+      const shuffled = (questionsData || []).sort(() => Math.random() - 0.5).slice(0, 10)
+      
+      const questionsWithOptions = await Promise.all(
+        shuffled.map(async (q) => {
+          const { data: optionsData } = await supabase
+            .from('answer_options')
+            .select('*')
+            .eq('question_id', q.id)
+            .order('option_letter')
+          return { ...q, answer_options: optionsData || [] }
+        })
+      )
+      
+      setQuestions(prev => [...prev, ...questionsWithOptions])
+      setCurrentIndex(prev => prev + 1)
+      setSelectedOption(null)
+      setAnswered(false)
+    } catch (error) {
+      finishQuiz()
+    }
+  }
+
+  const finishQuiz = async () => {
     const timeSpent = Math.floor((Date.now() - startTime) / 1000)
+    
+    // Update streak
+    if (user) {
+      try {
+        const { data: profile } = await supabase.from('user_profiles').select('*').eq('id', user.id).single()
+        const today = new Date().toDateString()
+        const lastStudy = profile?.last_study_date ? new Date(profile.last_study_date).toDateString() : null
+        let newStreak = profile?.current_streak_days || 0
+        
+        if (lastStudy !== today) {
+          const yesterday = new Date(Date.now() - 86400000).toDateString()
+          if (lastStudy === yesterday) {
+            newStreak = (profile?.current_streak_days || 0) + 1
+          } else {
+            newStreak = 1
+          }
+          await supabase.from('user_profiles').update({
+            current_streak_days: newStreak,
+            last_study_date: new Date().toISOString(),
+            total_questions_answered: (profile?.total_questions_answered || 0) + questions.length
+          }).eq('id', user.id)
+        }
+      } catch (e) {
+        console.error('Error updating streak:', e)
+      }
+    }
+    
     navigate('/quiz/result', {
       state: {
         total: questions.length,
@@ -140,16 +294,35 @@ export default function QuizPage() {
   const currentQuestion = questions[currentIndex]
   const progress = ((currentIndex + 1) / questions.length) * 100
 
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${mins}:${secs.toString().padStart(2, '0')}`
+  }
+
   return (
     <div className="quiz-page">
       <div className="quiz-header">
         <div className="quiz-progress-info">
-          <span>Questão {currentIndex + 1} de {questions.length}</span>
-          <span className="quiz-meta">{currentQuestion.exam_source} #{currentQuestion.question_number}</span>
+          <span>{isInfinito ? `Questão ${currentIndex + 1} • Modo Infinito` : `Questão ${currentIndex + 1} de ${questions.length}`}</span>
+          <span className="quiz-meta">⏱ {formatTime(timer)} | ✓ {correctCount}</span>
         </div>
-        <div className="progress-bar">
-          <div className="progress-fill" style={{ width: `${progress}%` }}></div>
+        <div className="quiz-progress-info">
+          <span className="quiz-meta">{currentQuestion.exam_source} #{currentQuestion.question_number} • {currentQuestion.specialty}</span>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <button onClick={toggleFlag} className={`btn-flag ${isFlagged ? 'active' : ''}`} title="Marcar questão">
+              {isFlagged ? '🚩 Marcada' : '🏴 Marcar'}
+            </button>
+            <button onClick={() => setShowNoteModal(true)} className="btn-note" title="Adicionar anotação">
+              📝 Anotação
+            </button>
+          </div>
         </div>
+        {!isInfinito && (
+          <div className="progress-bar">
+            <div className="progress-fill" style={{ width: `${progress}%` }}></div>
+          </div>
+        )}
       </div>
 
       <div className="quiz-content">
@@ -193,12 +366,41 @@ export default function QuizPage() {
               Confirmar Resposta
             </button>
           ) : (
-            <button onClick={handleNext} className="btn-next">
-              {currentIndex < questions.length - 1 ? 'Próxima Questão' : 'Ver Resultado'}
-            </button>
+            <div style={{ display: 'flex', gap: '0.75rem', width: '100%' }}>
+              {isInfinito && (
+                <button onClick={finishQuiz} className="btn-finish">
+                  Finalizar
+                </button>
+              )}
+              <button onClick={handleNext} className="btn-next" style={{ flex: 1 }}>
+                {isInfinito ? 'Próxima Questão' : currentIndex < questions.length - 1 ? 'Próxima Questão' : 'Ver Resultado'}
+              </button>
+            </div>
           )}
         </div>
       </div>
+
+      {showNoteModal && (
+        <div className="modal-overlay" onClick={() => setShowNoteModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Anotação para questão #{currentQuestion.question_number}</h3>
+              <button onClick={() => setShowNoteModal(false)} className="modal-close">×</button>
+            </div>
+            <textarea
+              value={noteText}
+              onChange={(e) => setNoteText(e.target.value)}
+              placeholder="Digite sua anotação..."
+              className="note-textarea"
+              rows={6}
+            />
+            <div className="modal-actions">
+              <button onClick={() => setShowNoteModal(false)} className="btn-modal secondary">Cancelar</button>
+              <button onClick={saveNote} className="btn-modal primary">Salvar</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

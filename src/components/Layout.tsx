@@ -21,11 +21,11 @@ export default function Layout() {
               <NavLink to="/" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
                 Início
               </NavLink>
-              <NavLink to="/quiz" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
-                Simulado
-              </NavLink>
               <NavLink to="/review" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
                 Revisão
+              </NavLink>
+              <NavLink to="/stats" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+                Estatísticas
               </NavLink>
               {isAdmin && (
                 <NavLink to="/admin" className="nav-link admin-link">
@@ -35,6 +35,9 @@ export default function Layout() {
             </nav>
           </div>
           <div className="header-right">
+            <NavLink to="/settings" className="nav-link">
+              Configurações
+            </NavLink>
             <span className="user-info">
               {profile?.full_name || profile?.email}
               {isAdmin && <span className="admin-badge">Admin</span>}

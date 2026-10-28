@@ -1,10 +1,60 @@
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
+import { supabase } from '../lib/supabase'
 import './HomePage.css'
+
+interface Stats {
+  totalQuestions: number
+  totalAnswered: number
+  totalCorrect: number
+  currentStreak: number
+  accuracy: number
+}
 
 export default function HomePage() {
   const navigate = useNavigate()
-  const { profile, isAdmin } = useAuth()
+  const { profile, isAdmin, user } = useAuth()
+  const [stats, setStats] = useState<Stats>({
+    totalQuestions: 0,
+    totalAnswered: 0,
+    totalCorrect: 0,
+    currentStreak: 0,
+    accuracy: 0
+  })
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchData()
+  }, [user])
+
+  const fetchData = async () => {
+    try {
+      const [questionsRes, answersRes, profileRes] = await Promise.all([
+        supabase.from('questions').select('id', { count: 'exact', head: true }),
+        user ? supabase.from('user_answers').select('is_correct').eq('user_id', user.id) : Promise.resolve({ data: [] }),
+        user ? supabase.from('user_profiles').select('*').eq('id', user.id).single() : Promise.resolve({ data: null })
+      ])
+
+      const answers = answersRes.data || []
+      const totalAnswered = answers.length
+      const totalCorrect = answers.filter(a => a.is_correct).length
+      const accuracy = totalAnswered > 0 ? totalCorrect / totalAnswered : 0
+      const streak = profileRes.data?.current_streak_days || 0
+
+      setStats({
+        totalQuestions: questionsRes.count || 0,
+        totalAnswered,
+        totalCorrect,
+        currentStreak: streak,
+        accuracy
+      })
+    } catch (error) {
+      console.error('Error fetching data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <div className="home-page">
@@ -13,37 +63,78 @@ export default function HomePage() {
         <p>Pratique com questões reais de provas de residência médica</p>
       </section>
 
-      <section className="actions-section">
-        <div className="action-card" onClick={() => navigate('/quiz')}>
-          <div className="action-icon">📝</div>
-          <h3>Iniciar Simulado</h3>
-          <p>Questões aleatórias de todas as especialidades</p>
+      <section className="stats-overview">
+        <div className="stat-box">
+          <div className="stat-box-value">{stats.totalQuestions}</div>
+          <div className="stat-box-label">Questões totais</div>
         </div>
-        <div className="action-card" onClick={() => navigate('/review')}>
-          <div className="action-icon">🔍</div>
-          <h3>Revisar Questões</h3>
-          <p>Revise questões erradas e marcadas para revisão</p>
+        <div className="stat-box">
+          <div className="stat-box-value">{stats.totalAnswered}</div>
+          <div className="stat-box-label">Respondidas</div>
         </div>
-        {isAdmin && (
-          <div className="action-card admin-card" onClick={() => navigate('/admin/questions')}>
-            <div className="action-icon">⚙️</div>
-            <h3>Gerenciar Questões</h3>
-            <p>Adicionar, editar ou remover questões do banco</p>
-          </div>
-        )}
+        <div className="stat-box">
+          <div className="stat-box-value">{Math.round(stats.accuracy * 100)}%</div>
+          <div className="stat-box-label">Precisão</div>
+        </div>
+        <div className="stat-box">
+          <div className="stat-box-value">{stats.currentStreak} 🔥</div>
+          <div className="stat-box-label">Sequência</div>
+        </div>
       </section>
 
-      <section className="info-section">
-        <div className="info-card">
-          <h4>Como funciona</h4>
-          <ul>
-            <li>Responda questões de provas reais</li>
-            <li>Veja o gabarito imediatamente após responder</li>
-            <li>Acompanhe seu desempenho</li>
-            <li>Revise suas dúvidas</li>
-          </ul>
+      <section className="quick-start">
+        <h3>Início rápido</h3>
+        <div className="actions-grid">
+          <div className="action-card" onClick={() => navigate('/quiz')}>
+            <div className="action-icon">⚡</div>
+            <h4>Quiz rápido</h4>
+            <p>10 questões aleatórias</p>
+          </div>
+          <div className="action-card" onClick={() => navigate('/quiz?mode=infinito')}>
+            <div className="action-icon">♾️</div>
+            <h4>Modo Infinito</h4>
+            <p>Pratique sem limite</p>
+          </div>
+          <div className="action-card" onClick={() => navigate('/exams')}>
+            <div className="action-icon">📚</div>
+            <h4>Escolher prova</h4>
+            <p>Por exame específico</p>
+          </div>
+          <div className="action-card" onClick={() => navigate('/specialties')}>
+            <div className="action-icon">🩺</div>
+            <h4>Especialidades</h4>
+            <p>Foco por matéria</p>
+          </div>
+          <div className="action-card" onClick={() => navigate('/review')}>
+            <div className="action-icon">🔍</div>
+            <h4>Revisar erros</h4>
+            <p>Questões erradas</p>
+          </div>
+          <div className="action-card" onClick={() => navigate('/stats')}>
+            <div className="action-icon">📊</div>
+            <h4>Estatísticas</h4>
+            <p>Seu desempenho</p>
+          </div>
         </div>
       </section>
+
+      {isAdmin && (
+        <section className="admin-section">
+          <h3>Administração</h3>
+          <div className="actions-grid">
+            <div className="action-card admin-card" onClick={() => navigate('/admin/questions')}>
+              <div className="action-icon">📝</div>
+              <h4>Gerenciar Questões</h4>
+              <p>Adicionar, editar ou remover</p>
+            </div>
+            <div className="action-card admin-card" onClick={() => navigate('/admin/users')}>
+              <div className="action-icon">👥</div>
+              <h4>Gerenciar Usuários</h4>
+              <p>Controle de acesso</p>
+            </div>
+          </div>
+        </section>
+      )}
     </div>
   )
 }
