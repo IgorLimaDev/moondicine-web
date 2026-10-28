@@ -107,10 +107,13 @@ a:hover {
 :root.dark-mode .option-item,
 :root.dark-mode .review-date,
 :root.dark-mode .quiz-progress-info,
-:root.dark-mode .btn-flag,
-:root.dark-mode .btn-note,
 :root.dark-mode .note-textarea {
   color: #000000 !important;
+}
+
+:root.dark-mode .btn-flag:not(.active),
+:root.dark-mode .btn-note {
+  color: #ffffff !important;
 }
 
 :root.dark-mode .action-card p,
