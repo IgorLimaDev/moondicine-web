@@ -60,24 +60,40 @@ export default function QuizPage() {
 
   const checkIfFlagged = async (questionId: number) => {
     if (!user) return
-    const { data } = await supabase
-      .from('question_flags')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('question_id', questionId)
-      .single()
-    setIsFlagged(!!data)
+    try {
+      const { data, error } = await supabase
+        .from('question_flags')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('question_id', questionId)
+        .maybeSingle()
+      if (error) {
+        setIsFlagged(false)
+        return
+      }
+      setIsFlagged(!!data)
+    } catch (e) {
+      setIsFlagged(false)
+    }
   }
 
   const fetchNote = async (questionId: number) => {
     if (!user) return
-    const { data } = await supabase
-      .from('question_notes')
-      .select('note_text')
-      .eq('user_id', user.id)
-      .eq('question_id', questionId)
-      .single()
-    setNoteText(data?.note_text || '')
+    try {
+      const { data, error } = await supabase
+        .from('question_notes')
+        .select('note_text')
+        .eq('user_id', user.id)
+        .eq('question_id', questionId)
+        .maybeSingle()
+      if (error) {
+        setNoteText('')
+        return
+      }
+      setNoteText(data?.note_text || '')
+    } catch (e) {
+      setNoteText('')
+    }
   }
 
   const toggleFlag = async () => {
@@ -131,10 +147,9 @@ export default function QuizPage() {
       if (qError) throw qError
 
       if (mode === 'infinito') {
-        // Infinite mode - take all questions, shuffle
         const shuffled = (questionsData || []).sort(() => Math.random() - 0.5)
         const questionsWithOptions = await Promise.all(
-          shuffled.slice(0, 50).map(async (q) => {
+          shuffled.slice(0, 40).map(async (q: any) => {
             const { data: optionsData } = await supabase
               .from('answer_options')
               .select('*')
@@ -145,10 +160,9 @@ export default function QuizPage() {
         )
         setQuestions(questionsWithOptions)
       } else if (examFilter) {
-        // All questions from specific exam
-        const shuffled = (questionsData || []).sort((a: any, b: any) => a.question_number - b.question_number)
+        const list = (questionsData || []).sort((a: any, b: any) => (a.question_number || 0) - (b.question_number || 0))
         const questionsWithOptions = await Promise.all(
-          shuffled.map(async (q) => {
+          list.map(async (q: any) => {
             const { data: optionsData } = await supabase
               .from('answer_options')
               .select('*')
@@ -159,10 +173,9 @@ export default function QuizPage() {
         )
         setQuestions(questionsWithOptions)
       } else if (specialtyFilter) {
-        // All questions from specific specialty
         const shuffled = (questionsData || []).sort(() => Math.random() - 0.5)
         const questionsWithOptions = await Promise.all(
-          shuffled.map(async (q) => {
+          shuffled.map(async (q: any) => {
             const { data: optionsData } = await supabase
               .from('answer_options')
               .select('*')
@@ -173,10 +186,9 @@ export default function QuizPage() {
         )
         setQuestions(questionsWithOptions)
       } else {
-        // Default - random 10 questions
         const shuffled = (questionsData || []).sort(() => Math.random() - 0.5).slice(0, 10)
         const questionsWithOptions = await Promise.all(
-          shuffled.map(async (q) => {
+          shuffled.map(async (q: any) => {
             const { data: optionsData } = await supabase
               .from('answer_options')
               .select('*')
@@ -263,20 +275,18 @@ export default function QuizPage() {
       
       const { data: questionsData } = await query
       
-      // Get questions not already shown
       const shownIds = questions.map(q => q.id)
       const remaining = (questionsData || []).filter((q: any) => !shownIds.includes(q.id))
       let toAdd = []
       
       if (remaining.length > 0) {
-        toAdd = remaining.sort(() => Math.random() - 0.5).slice(0, 15)
+        toAdd = remaining.sort(() => Math.random() - 0.5).slice(0, 10)
       } else {
-        // All questions shown, reshuffle from all
-        toAdd = (questionsData || []).sort(() => Math.random() - 0.5).slice(0, 15)
+        toAdd = (questionsData || []).sort(() => Math.random() - 0.5).slice(0, 10)
       }
       
       const questionsWithOptions = await Promise.all(
-        toAdd.map(async (q) => {
+        toAdd.map(async (q: any) => {
           const { data: optionsData } = await supabase
             .from('answer_options')
             .select('*')
@@ -414,11 +424,13 @@ export default function QuizPage() {
           })}
         </div>
 
-        {answered && (currentQuestion as any).explanation && (
-          <div className="explanation-card">
-            <h4>💡 Explicação</h4>
-            <p>{(currentQuestion as any).explanation}</p>
-          </div>
+        {answered && (
+          ((currentQuestion as any).explanation || (currentQuestion as any).explanation_text || (currentQuestion as any).justificativa || (currentQuestion as any).resolution) && (
+            <div className="explanation-card">
+              <h4>💡 Explicação</h4>
+              <p>{(currentQuestion as any).explanation || (currentQuestion as any).explanation_text || (currentQuestion as any).justificativa || (currentQuestion as any).resolution}</p>
+            </div>
+          )
         )}
 
         <div className="quiz-actions">
