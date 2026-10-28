@@ -80,10 +80,21 @@ a:hover {
 }
 
 :root.dark-mode .question-text {
+  color: #000000 !important;
+}
+
+:root.dark-mode .option-button:not(.selected):not(.correct):not(.wrong) {
   color: #ffffff !important;
 }
 
-:root.dark-mode .option-button,
+:root.dark-mode .option-button:not(.selected):not(.correct):not(.wrong) .option-text {
+  color: #ffffff !important;
+}
+
+:root.dark-mode .option-button:not(.selected):not(.correct):not(.wrong) .option-letter {
+  color: #ffffff !important;
+}
+
 :root.dark-mode .option-text,
 :root.dark-mode .option-letter,
 :root.dark-mode .review-question-text,
