@@ -161,7 +161,7 @@
 }
 
 .review-explanation p {
-  color: var(--text-primary);
+  color: #000000 !important;
   line-height: 1.6;
   white-space: pre-wrap;
   font-size: 0.9rem;
