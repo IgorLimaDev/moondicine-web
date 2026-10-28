@@ -16,6 +16,7 @@ import AdminUsers from './admin/AdminUsers'
 import AdminQuestions from './admin/AdminQuestions'
 import AdminQuestionEdit from './admin/AdminQuestionEdit'
 import LoadingScreen from './components/LoadingScreen'
+import InstallPrompt from './components/InstallPrompt'
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth()
@@ -37,8 +38,10 @@ function App() {
   if (loading) return <LoadingScreen />
 
   return (
-    <Routes>
-      <Route path="/login" element={user ? <Navigate to="/" replace /> : <LoginPage />} />
+    <>
+      <InstallPrompt />
+      <Routes>
+        <Route path="/login" element={user ? <Navigate to="/" replace /> : <LoginPage />} />
       
       <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
         <Route index element={<HomePage />} />
@@ -61,6 +64,7 @@ function App() {
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </>
   )
 }
 

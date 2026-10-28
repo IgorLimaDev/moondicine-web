@@ -2,6 +2,7 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
 }
 
 :root {
@@ -18,6 +19,11 @@
   --warning: #ed6c02;
 }
 
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
@@ -25,6 +31,12 @@ body {
   background-color: var(--bg);
   color: var(--text-primary);
   line-height: 1.6;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+#root {
+  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 button {
@@ -36,7 +48,7 @@ button {
 
 input, select, textarea {
   font-family: inherit;
-  font-size: 1rem;
+  font-size: 16px;
 }
 
 a {
@@ -52,4 +64,10 @@ a:hover {
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 1rem;
+}
+
+@media (max-width: 768px) {
+  html {
+    font-size: 15px;
+  }
 }
