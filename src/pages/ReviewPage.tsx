@@ -31,6 +31,7 @@ export default function ReviewPage() {
   const [activeTab, setActiveTab] = useState<'all' | 'wrong' | 'flagged'>('all')
   const [expandedId, setExpandedId] = useState<number | null>(null)
   const [options, setOptions] = useState<any[]>([])
+  const [explanations, setExplanations] = useState<Record<number, string>>({})
 
   useEffect(() => {
     if (user) {
@@ -99,12 +100,23 @@ export default function ReviewPage() {
       return
     }
     setExpandedId(questionId)
-    const { data } = await supabase
+    const { data: optionsData } = await supabase
       .from('answer_options')
       .select('*')
       .eq('question_id', questionId)
       .order('option_letter')
-    setOptions(data || [])
+    setOptions(optionsData || [])
+    
+    if (!explanations[questionId]) {
+      const { data: exp } = await supabase
+        .from('ai_explanations')
+        .select('explanation_text')
+        .eq('question_id', questionId)
+        .maybeSingle()
+      if (exp?.explanation_text) {
+        setExplanations(prev => ({ ...prev, [questionId]: exp.explanation_text }))
+      }
+    }
   }
 
   const removeFlag = async (flagId: number) => {
@@ -164,14 +176,22 @@ export default function ReviewPage() {
                 <div className="review-card-body" onClick={() => expandQuestion(item.question_id)}>
                   <p className="review-question-text">{item.questions.question_text}</p>
                   {expandedId === item.question_id && (
-                    <div className="expanded-options">
-                      {options.map(opt => (
-                        <div key={opt.id} className={`option-item ${opt.is_correct ? 'correct' : ''}`}>
-                          <strong>{opt.option_letter})</strong> {opt.option_text}
-                          {opt.is_correct && <span> ✓</span>}
+                    <>
+                      <div className="expanded-options">
+                        {options.map(opt => (
+                          <div key={opt.id} className={`option-item ${opt.is_correct ? 'correct' : ''}`}>
+                            <strong>{opt.option_letter})</strong> {opt.option_text}
+                            {opt.is_correct && <span> ✓</span>}
+                          </div>
+                        ))}
+                      </div>
+                      {explanations[item.question_id] && (
+                        <div className="review-explanation">
+                          <h4>💡 Explicação</h4>
+                          <p>{explanations[item.question_id]}</p>
                         </div>
-                      ))}
-                    </div>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
@@ -200,14 +220,22 @@ export default function ReviewPage() {
                 <div className="review-card-body" onClick={() => expandQuestion(review.question_id)}>
                   <p className="review-question-text">{review.questions.question_text}</p>
                   {expandedId === review.question_id && (
-                    <div className="expanded-options">
-                      {options.map(opt => (
-                        <div key={opt.id} className={`option-item ${opt.is_correct ? 'correct' : ''}`}>
-                          <strong>{opt.option_letter})</strong> {opt.option_text}
-                          {opt.is_correct && <span> ✓</span>}
+                    <>
+                      <div className="expanded-options">
+                        {options.map(opt => (
+                          <div key={opt.id} className={`option-item ${opt.is_correct ? 'correct' : ''}`}>
+                            <strong>{opt.option_letter})</strong> {opt.option_text}
+                            {opt.is_correct && <span> ✓</span>}
+                          </div>
+                        ))}
+                      </div>
+                      {explanations[review.question_id] && (
+                        <div className="review-explanation">
+                          <h4>💡 Explicação</h4>
+                          <p>{explanations[review.question_id]}</p>
                         </div>
-                      ))}
-                    </div>
+                      )}
+                    </>
                   )}
                 </div>
               </div>

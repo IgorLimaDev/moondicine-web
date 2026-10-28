@@ -146,6 +146,27 @@
   color: var(--success);
 }
 
+.review-explanation {
+  margin-top: 1rem;
+  background: #f1f8e9;
+  border: 2px solid #c5e1a5;
+  border-radius: 8px;
+  padding: 0.875rem 1rem;
+}
+
+.review-explanation h4 {
+  color: var(--success);
+  margin-bottom: 0.375rem;
+  font-size: 0.95rem;
+}
+
+.review-explanation p {
+  color: var(--text-primary);
+  line-height: 1.6;
+  white-space: pre-wrap;
+  font-size: 0.9rem;
+}
+
 .empty-state {
   text-align: center;
   padding: 3rem;
