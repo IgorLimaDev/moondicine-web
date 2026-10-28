@@ -119,11 +119,12 @@ export default function ReviewPage() {
       }
     }
 
-    if (!notes[questionId]) {
+    if (!notes[questionId] && user) {
       const { data: nt } = await supabase
         .from('question_notes')
         .select('note_text')
         .eq('question_id', questionId)
+        .eq('user_id', user.id)
         .maybeSingle()
       if (nt?.note_text) {
         setNotes(prev => ({ ...prev, [questionId]: nt.note_text }))

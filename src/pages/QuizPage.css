@@ -278,6 +278,7 @@
 :root.dark-mode .note-textarea {
   background: #2a2a2a !important;
   color: #ffffff !important;
+  caret-color: #ffffff !important;
 }
 
 :root.dark-mode .modal-actions {

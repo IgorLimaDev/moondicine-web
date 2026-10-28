@@ -202,6 +202,22 @@
   color: #ffffff !important;
 }
 
+:root.dark-mode .review-question-text {
+  color: #ffffff !important;
+}
+
+:root.dark-mode .option-item {
+  color: #ffffff !important;
+}
+
+:root.dark-mode .option-item.correct {
+  color: var(--success) !important;
+}
+
+:root.dark-mode .review-date {
+  color: #a0a0a0 !important;
+}
+
 .empty-state {
   text-align: center;
   padding: 3rem;
