@@ -79,7 +79,10 @@ a:hover {
   --error: #ef5350;
 }
 
-:root.dark-mode .question-text,
+:root.dark-mode .question-text {
+  color: #ffffff !important;
+}
+
 :root.dark-mode .option-button,
 :root.dark-mode .option-text,
 :root.dark-mode .option-letter,
