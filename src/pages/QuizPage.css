@@ -262,6 +262,29 @@
   color: var(--text-primary);
 }
 
+:root.dark-mode .modal-header {
+  background: #2a2a2a;
+  border-bottom-color: #444444;
+}
+
+:root.dark-mode .modal-header h3 {
+  color: #ffffff !important;
+}
+
+:root.dark-mode .modal-content {
+  background: #1a1a1a;
+}
+
+:root.dark-mode .note-textarea {
+  background: #2a2a2a !important;
+  color: #ffffff !important;
+}
+
+:root.dark-mode .modal-actions {
+  background: #2a2a2a;
+  border-top-color: #444444;
+}
+
 .modal-close {
   background: none;
   color: var(--text-secondary);

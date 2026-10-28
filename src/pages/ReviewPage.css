@@ -168,6 +168,40 @@
   font-size: 0.9rem;
 }
 
+.review-note {
+  margin-top: 0.75rem;
+  background: #fff3e0;
+  border: 2px solid #ffb74d;
+  border-radius: 8px;
+  padding: 0.875rem 1rem;
+}
+
+.review-note h4 {
+  color: #e65100;
+  margin-bottom: 0.375rem;
+  font-size: 0.95rem;
+}
+
+.review-note p {
+  color: #000000 !important;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  font-size: 0.9rem;
+}
+
+:root.dark-mode .review-note {
+  background: #2a2a2a;
+  border-color: #ffb74d;
+}
+
+:root.dark-mode .review-note h4 {
+  color: #ffb74d;
+}
+
+:root.dark-mode .review-note p {
+  color: #ffffff !important;
+}
+
 .empty-state {
   text-align: center;
   padding: 3rem;

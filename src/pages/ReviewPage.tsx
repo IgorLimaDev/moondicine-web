@@ -32,6 +32,7 @@ export default function ReviewPage() {
   const [expandedId, setExpandedId] = useState<number | null>(null)
   const [options, setOptions] = useState<any[]>([])
   const [explanations, setExplanations] = useState<Record<number, string>>({})
+  const [notes, setNotes] = useState<Record<number, string>>({})
 
   useEffect(() => {
     if (user) {
@@ -117,6 +118,17 @@ export default function ReviewPage() {
         setExplanations(prev => ({ ...prev, [questionId]: exp.explanation_text }))
       }
     }
+
+    if (!notes[questionId]) {
+      const { data: nt } = await supabase
+        .from('question_notes')
+        .select('note_text')
+        .eq('question_id', questionId)
+        .maybeSingle()
+      if (nt?.note_text) {
+        setNotes(prev => ({ ...prev, [questionId]: nt.note_text }))
+      }
+    }
   }
 
   const removeFlag = async (flagId: number) => {
@@ -191,6 +203,12 @@ export default function ReviewPage() {
                           <p>{explanations[item.question_id]}</p>
                         </div>
                       )}
+                      {notes[item.question_id] && (
+                        <div className="review-note">
+                          <h4>📝 Sua Anotação</h4>
+                          <p>{notes[item.question_id]}</p>
+                        </div>
+                      )}
                     </>
                   )}
                 </div>
@@ -233,6 +251,12 @@ export default function ReviewPage() {
                         <div className="review-explanation">
                           <h4>💡 Explicação</h4>
                           <p>{explanations[review.question_id]}</p>
+                        </div>
+                      )}
+                      {notes[review.question_id] && (
+                        <div className="review-note">
+                          <h4>📝 Sua Anotação</h4>
+                          <p>{notes[review.question_id]}</p>
                         </div>
                       )}
                     </>
