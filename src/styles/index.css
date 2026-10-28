@@ -95,6 +95,12 @@ a:hover {
   color: #ffffff !important;
 }
 
+:root.dark-mode .option-button:hover:not(.selected):not(.correct):not(.wrong),
+:root.dark-mode .option-button:hover:not(.selected):not(.correct):not(.wrong) .option-text,
+:root.dark-mode .option-button:hover:not(.selected):not(.correct):not(.wrong) .option-letter {
+  color: #000000 !important;
+}
+
 :root.dark-mode .option-text,
 :root.dark-mode .option-letter,
 :root.dark-mode .review-question-text,
@@ -103,10 +109,13 @@ a:hover {
 :root.dark-mode .quiz-progress-info,
 :root.dark-mode .btn-flag,
 :root.dark-mode .btn-note,
-:root.dark-mode .note-textarea,
+:root.dark-mode .note-textarea {
+  color: #000000 !important;
+}
+
 :root.dark-mode .action-card p,
 :root.dark-mode .stat-box-label {
-  color: #000000 !important;
+  color: #ffffff !important;
 }
 
 @media (max-width: 768px) {
