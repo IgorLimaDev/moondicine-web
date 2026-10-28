@@ -6,8 +6,20 @@ import { AuthProvider } from './lib/auth.tsx'
 import './styles/index.css'
 
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(() => {})
+  window.addEventListener('load', async () => {
+    const registration = await navigator.serviceWorker.register('/sw.js').catch(() => null)
+    if (!registration) return
+
+    registration.addEventListener('updatefound', () => {
+      const installingWorker = registration.installing
+      if (!installingWorker) return
+
+      installingWorker.addEventListener('statechange', () => {
+        if (installingWorker.state === 'installed' && navigator.serviceWorker.controller) {
+          window.location.reload()
+        }
+      })
+    })
   })
 }
 
