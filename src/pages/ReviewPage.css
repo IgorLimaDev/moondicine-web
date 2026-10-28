@@ -206,12 +206,16 @@
   color: #ffffff !important;
 }
 
-:root.dark-mode .option-item {
+:root.dark-mode .review-card-body .option-item:not(.correct):not(.wrong) {
   color: #ffffff !important;
 }
 
 :root.dark-mode .option-item.correct {
   color: var(--success) !important;
+}
+
+:root.dark-mode .option-item.wrong {
+  color: var(--error) !important;
 }
 
 :root.dark-mode .review-date {

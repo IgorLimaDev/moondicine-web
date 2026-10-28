@@ -103,8 +103,6 @@ a:hover {
 
 :root.dark-mode .option-text,
 :root.dark-mode .option-letter,
-:root.dark-mode .review-question-text,
-:root.dark-mode .option-item,
 :root.dark-mode .review-date,
 :root.dark-mode .quiz-progress-info,
 :root.dark-mode .note-textarea {
