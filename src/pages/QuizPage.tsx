@@ -37,6 +37,7 @@ export default function QuizPage() {
   const [isFlagged, setIsFlagged] = useState(false)
   const [showNoteModal, setShowNoteModal] = useState(false)
   const [noteText, setNoteText] = useState('')
+  const [explanation, setExplanation] = useState<string | null>(null)
 
   useEffect(() => {
     const mode = searchParams.get('mode')
@@ -49,6 +50,9 @@ export default function QuizPage() {
       checkIfFlagged(questions[currentIndex].id)
       fetchNote(questions[currentIndex].id)
     }
+    setExplanation(null)
+    setAnswered(false)
+    setSelectedOption(null)
   }, [currentIndex, questions])
 
   useEffect(() => {
@@ -223,6 +227,22 @@ export default function QuizPage() {
       setCorrectCount(prev => prev + 1)
     }
 
+    // Fetch explanation
+    try {
+      const { data: exp } = await supabase
+        .from('ai_explanations')
+        .select('explanation_text')
+        .eq('question_id', currentQuestion.id)
+        .maybeSingle()
+      if (exp?.explanation_text) {
+        setExplanation(exp.explanation_text)
+      } else {
+        setExplanation(null)
+      }
+    } catch (e) {
+      setExplanation(null)
+    }
+
     // Save user answer
     if (user) {
       try {
@@ -244,6 +264,7 @@ export default function QuizPage() {
     if (isInfinito && answered) {
       if (currentIndex < questions.length - 1) {
         setCurrentIndex(prev => prev + 1)
+        setExplanation(null)
         setSelectedOption(null)
         setAnswered(false)
       } else {
@@ -251,6 +272,7 @@ export default function QuizPage() {
       }
     } else if (currentIndex < questions.length - 1) {
       setCurrentIndex(prev => prev + 1)
+      setExplanation(null)
       setSelectedOption(null)
       setAnswered(false)
     } else {
@@ -424,13 +446,11 @@ export default function QuizPage() {
           })}
         </div>
 
-        {answered && (
-          ((currentQuestion as any).explanation || (currentQuestion as any).explanation_text || (currentQuestion as any).justificativa || (currentQuestion as any).resolution) && (
-            <div className="explanation-card">
-              <h4>💡 Explicação</h4>
-              <p>{(currentQuestion as any).explanation || (currentQuestion as any).explanation_text || (currentQuestion as any).justificativa || (currentQuestion as any).resolution}</p>
-            </div>
-          )
+        {answered && explanation && (
+          <div className="explanation-card">
+            <h4>💡 Explicação</h4>
+            <p>{explanation}</p>
+          </div>
         )}
 
         <div className="quiz-actions">
