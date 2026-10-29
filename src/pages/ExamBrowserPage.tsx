@@ -11,11 +11,18 @@ interface ExamGroup {
 export default function ExamBrowserPage() {
   const navigate = useNavigate()
   const [exams, setExams] = useState<ExamGroup[]>([])
+  const [filteredExams, setFilteredExams] = useState<ExamGroup[]>([])
+  const [search, setSearch] = useState('')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     fetchExams()
   }, [])
+
+  useEffect(() => {
+    const term = search.toLowerCase()
+    setFilteredExams(exams.filter(e => e.exam_source.toLowerCase().includes(term)))
+  }, [search, exams])
 
   const fetchExams = async () => {
     try {
@@ -50,8 +57,18 @@ export default function ExamBrowserPage() {
         <p>Selecione uma prova para praticar</p>
       </div>
 
+      <div className="search-container">
+        <input
+          type="text"
+          placeholder="Buscar provas..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="search-input"
+        />
+      </div>
+
       <div className="exam-list">
-        {exams.map(exam => (
+        {filteredExams.map(exam => (
           <div key={exam.exam_source} className="exam-card">
             <div className="exam-card-header">
               <h3>📚 {exam.exam_source}</h3>
@@ -67,8 +84,8 @@ export default function ExamBrowserPage() {
             </div>
           </div>
         ))}
-        {exams.length === 0 && (
-          <div className="empty">Nenhuma prova disponível</div>
+        {filteredExams.length === 0 && (
+          <div className="empty">Nenhuma prova encontrada</div>
         )}
       </div>
     </div>
