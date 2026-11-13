@@ -27,6 +27,9 @@ export default function AdminLayout() {
               <NavLink to="/admin/questions" className={({ isActive }) => isActive ? 'admin-nav-link active' : 'admin-nav-link'}>
                 Questões
               </NavLink>
+              <NavLink to="/admin/exams" className={({ isActive }) => isActive ? 'admin-nav-link active' : 'admin-nav-link'}>
+                Provas
+              </NavLink>
               <NavLink to="/" className="admin-nav-link">
                 ← Voltar ao App
               </NavLink>

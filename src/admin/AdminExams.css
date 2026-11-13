@@ -1,0 +1,177 @@
+.admin-exams {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.admin-page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.admin-page-header h2 {
+  font-size: 1.5rem;
+  color: var(--text-primary);
+}
+
+.admin-page-header p {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  margin-top: 0.25rem;
+}
+
+.alert {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+.alert.error {
+  background: #ffebee;
+  color: var(--error);
+  border: 1px solid #ffcdd2;
+}
+
+.alert.success {
+  background: #e8f5e9;
+  color: var(--success);
+  border: 1px solid #c8e6c9;
+}
+
+.loading {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-secondary);
+}
+
+.exams-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.exam-card {
+  background: var(--card-bg);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.exam-card-header {
+  padding: 1rem 1.25rem;
+  background: var(--bg);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.exam-card-header h3 {
+  color: var(--text-primary);
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.exam-count {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  background: var(--card-bg);
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+}
+
+.rename-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+  max-width: 400px;
+}
+
+.rename-input {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--card-bg);
+  color: var(--text-primary);
+  font-size: 1rem;
+}
+
+.rename-input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
+
+.rename-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.rename-actions button {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.btn-save {
+  background: var(--primary);
+  color: white;
+}
+
+.btn-cancel {
+  background: var(--bg);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+}
+
+.exam-card-actions {
+  padding: 0.75rem 1.25rem;
+  border-top: 1px solid var(--border);
+}
+
+.btn-action {
+  background: none;
+  color: var(--text-secondary);
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+}
+
+.btn-action:hover {
+  background: var(--bg);
+  color: var(--primary);
+  border-color: var(--border);
+}
+
+.btn-action.rename:hover {
+  color: var(--accent);
+}
+
+.empty-state {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-secondary);
+  background: var(--card-bg);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+
+@media (max-width: 768px) {
+  .exam-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .rename-form {
+    max-width: none;
+  }
+}

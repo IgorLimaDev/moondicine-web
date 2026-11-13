@@ -15,6 +15,7 @@ import AdminDashboard from './admin/AdminDashboard'
 import AdminUsers from './admin/AdminUsers'
 import AdminQuestions from './admin/AdminQuestions'
 import AdminQuestionEdit from './admin/AdminQuestionEdit'
+import AdminExams from './admin/AdminExams'
 import LoadingScreen from './components/LoadingScreen'
 import InstallPrompt from './components/InstallPrompt'
 
@@ -60,6 +61,7 @@ function App() {
         <Route path="questions" element={<AdminQuestions />} />
         <Route path="questions/new" element={<AdminQuestionEdit />} />
         <Route path="questions/:id" element={<AdminQuestionEdit />} />
+        <Route path="exams" element={<AdminExams />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
