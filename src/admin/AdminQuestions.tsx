@@ -23,21 +23,38 @@ export default function AdminQuestions() {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterSpecialty, setFilterSpecialty] = useState('all')
   const [specialties, setSpecialties] = useState<string[]>([])
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalCount, setTotalCount] = useState(0)
+  const pageSize = 50
 
   useEffect(() => {
     fetchQuestions()
     fetchSpecialties()
-  }, [])
+  }, [searchTerm, filterSpecialty, currentPage])
 
   const fetchQuestions = async () => {
     try {
-      const { data, error } = await supabase
+      const from = (currentPage - 1) * pageSize
+      const to = from + pageSize - 1
+      
+      let query = supabase
         .from('questions')
-        .select('*')
+        .select('*', { count: 'exact' })
         .order('updated_at', { ascending: false })
+        .range(from, to)
+
+      if (filterSpecialty !== 'all') {
+        query = query.eq('specialty', filterSpecialty)
+      }
+      if (searchTerm) {
+        query = query.or(`question_text.ilike.%${searchTerm}%,exam_source.ilike.%${searchTerm}%`)
+      }
+
+      const { data, error, count } = await query
 
       if (error) throw error
       setQuestions(data || [])
+      setTotalCount(count || 0)
     } catch (error) {
       console.error('Error fetching questions:', error)
     } finally {
@@ -58,6 +75,10 @@ export default function AdminQuestions() {
     }
   }
 
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm, filterSpecialty])
+
   const handleDelete = async (id: number) => {
     if (!confirm('Tem certeza que deseja excluir esta questão? Isso também excluirá todas as alternativas e respostas relacionadas.')) {
       return
@@ -77,13 +98,7 @@ export default function AdminQuestions() {
     }
   }
 
-  const filteredQuestions = questions.filter(q => {
-    const matchesSearch = searchTerm === '' || 
-      q.question_text.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      q.exam_source.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesSpecialty = filterSpecialty === 'all' || q.specialty === filterSpecialty
-    return matchesSearch && matchesSpecialty
-  })
+  const totalPages = Math.ceil(totalCount / pageSize)
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('pt-BR')
@@ -94,7 +109,7 @@ export default function AdminQuestions() {
       <div className="admin-page-header">
         <div>
           <h2>Gerenciar Questões</h2>
-          <p>{questions.length} questões cadastradas</p>
+          <p>{totalCount} questões cadastradas {totalPages > 1 && `(Página ${currentPage} de ${totalPages})`}</p>
         </div>
         <button onClick={() => navigate('/admin/questions/new')} className="btn-add">
           ➕ Nova Questão
@@ -125,7 +140,7 @@ export default function AdminQuestions() {
         <div className="loading">Carregando...</div>
       ) : (
         <div className="questions-list">
-          {filteredQuestions.map(question => (
+          {questions.map(question => (
             <div key={question.id} className="question-card">
               <div className="question-card-header">
                 <div className="question-meta">
@@ -151,9 +166,30 @@ export default function AdminQuestions() {
               </div>
             </div>
           ))}
-          {filteredQuestions.length === 0 && (
+          {questions.length === 0 && (
             <div className="empty-state">
               <p>Nenhuma questão encontrada</p>
+            </div>
+          )}
+          {totalPages > 1 && (
+            <div className="pagination">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="page-btn"
+              >
+                ← Anterior
+              </button>
+              <span className="page-info">
+                Página {currentPage} de {totalPages}
+              </span>
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="page-btn"
+              >
+                Próxima →
+              </button>
             </div>
           )}
         </div>
